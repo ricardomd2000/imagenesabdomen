@@ -1,4 +1,4 @@
-const emailsList = [
+window.emailsList = [
     "prueba@unisabana.edu.co",
     "andresanbl@unisabana.edu.co",
     "isabellabopo@unisabana.edu.co",

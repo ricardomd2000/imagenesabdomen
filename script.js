@@ -60,7 +60,8 @@ window.addEventListener('load', () => {
 DOM.loginBtn.addEventListener('click', () => {
     const email = DOM.emailInput.value.trim().toLowerCase();
     
-    if (emailsList.includes(email)) {
+    const list = window.emailsList || [];
+    if (list.includes(email)) {
         handleAuthSuccess(email);
     } else {
         DOM.authError.style.display = 'block';
