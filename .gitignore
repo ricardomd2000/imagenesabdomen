@@ -12,3 +12,6 @@ Thumbs.db
 *.ps1
 *.bat
 *.log
+
+# Firebase Config (Private)
+js/firebase-config.js
