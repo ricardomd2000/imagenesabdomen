@@ -46,11 +46,25 @@ const DOM = {
     finalScore: document.getElementById('final-score'),
     scoreProgress: document.getElementById('score-progress'),
     feedbackMessage: document.getElementById('feedback-message'),
-    statTheory: document.getElementById('stat-theory'),
-    statAnatomy: document.getElementById('stat-anatomy'),
     statDiag: document.getElementById('stat-diag'),
-    statPath: document.getElementById('stat-path')
+    statPath: document.getElementById('stat-path'),
+    // Teacher Elements
+    passGroup: document.getElementById('pass-group'),
+    passwordInput: document.getElementById('password-input'),
+    teacherSection: document.getElementById('teacher-section'),
+    teacherTableBody: document.getElementById('teacher-table-body'),
+    totalStudents: document.getElementById('total-students'),
+    avgScore: document.getElementById('avg-score'),
+    completedCount: document.getElementById('completed-count'),
+    exportBtn: document.getElementById('export-btn'),
+    reviewSection: document.getElementById('review-section'),
+    reviewStudentEmail: document.getElementById('review-student-email'),
+    reviewContent: document.getElementById('review-content'),
+    backToDashBtn: document.getElementById('back-to-dash-btn')
 };
+
+const TEACHER_EMAIL = "ricardoaldo@unisabana.edu.co";
+const TEACHER_PASS = "Anfi2026**";
 
 // --- Initialization ---
 window.addEventListener('load', () => {
@@ -63,10 +77,31 @@ window.addEventListener('load', () => {
 DOM.loginBtn.addEventListener('click', () => {
     const email = DOM.emailInput.value.trim().toLowerCase();
     
+    // Check if it's the teacher
+    if (email === TEACHER_EMAIL) {
+        if (DOM.passGroup.style.display === 'none') {
+            DOM.passGroup.style.display = 'block';
+            DOM.emailInput.style.borderColor = 'var(--primary)';
+            DOM.passwordInput.focus();
+            return;
+        }
+        
+        const pass = DOM.passwordInput.value;
+        if (pass === TEACHER_PASS) {
+            showTeacherDashboard();
+        } else {
+            DOM.authError.textContent = "Contraseña incorrecta.";
+            DOM.authError.style.display = 'block';
+            DOM.passwordInput.style.borderColor = 'var(--error)';
+        }
+        return;
+    }
+
     const list = window.emailsList || [];
     if (list.includes(email)) {
         handleAuthSuccess(email);
     } else {
+        DOM.authError.textContent = "Este correo no está en la lista de estudiantes autorizados.";
         DOM.authError.style.display = 'block';
         DOM.emailInput.style.borderColor = 'var(--error)';
     }
@@ -193,6 +228,13 @@ function generateDistractors(correctAnswer, allAnswers) {
         shuffled: combined,
         correctIndex: combined.indexOf(correctAnswer)
     };
+}
+
+function isAnswerCorrect(studentInput, correctValue) {
+    if (!studentInput || !correctValue) return false;
+    const cleanInput = studentInput.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const cleanCorrect = correctValue.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return cleanInput === cleanCorrect;
 }
 
 // --- Quiz Flow ---
@@ -358,3 +400,155 @@ function showResults() {
     DOM.statDiag.textContent = `${currentState.score.part3}/10`;
     DOM.statPath.textContent = `${currentState.score.part4}/5`;
 }
+
+// --- Teacher Dashboard Logic ---
+async function showTeacherDashboard() {
+    DOM.authSection.style.display = 'none';
+    DOM.loading.style.display = 'flex';
+    DOM.loading.querySelector('p').textContent = 'Cargando base de datos de estudiantes...';
+
+    try {
+        const snapshot = await db.collection('evaluaciones_abdomen').orderBy('lastUpdated', 'desc').get();
+        const evaluations = [];
+        snapshot.forEach(doc => evaluations.push(doc.data()));
+
+        renderTeacherTable(evaluations);
+        updateTeacherStats(evaluations);
+
+        DOM.teacherSection.style.display = 'flex';
+        DOM.header.style.display = 'flex';
+        DOM.displayEmail.textContent = "MODO EVALUADOR";
+        
+        DOM.exportBtn.onclick = () => exportToCSV(evaluations);
+    } catch (e) {
+        console.error("Error loading dashboard:", e);
+        alert("Error al cargar datos. Verifica tu conexión.");
+    }
+
+    DOM.loading.style.display = 'none';
+}
+
+function renderTeacherTable(evaluations) {
+    DOM.teacherTableBody.innerHTML = '';
+    
+    evaluations.forEach(eval => {
+        const tr = document.createElement('tr');
+        const score = eval.score ? eval.score.total.toFixed(1) : '---';
+        const date = eval.lastUpdated ? new Date(eval.lastUpdated.seconds * 1000).toLocaleDateString() : '---';
+        const statusBadge = eval.status === 'completed' ? 
+            `<span class="badge badge-success">Completado</span>` : 
+            `<span class="badge badge-warning">En Progreso</span>`;
+
+        tr.innerHTML = `
+            <td style="padding: 1rem;">${eval.email}</td>
+            <td style="padding: 1rem;">${statusBadge}</td>
+            <td style="padding: 1rem; font-weight: 700;">${score}</td>
+            <td style="padding: 1rem;">${date}</td>
+            <td style="padding: 1rem;">
+                <button class="btn-secondary" style="padding: 0.4rem 1rem; font-size: 0.8rem;" onclick="viewStudentReview('${eval.email}')">Revisar</button>
+            </td>
+        `;
+        DOM.teacherTableBody.appendChild(tr);
+    });
+}
+
+function updateTeacherStats(evaluations) {
+    const total = evaluations.length;
+    const completed = evaluations.filter(e => e.status === 'completed');
+    const avg = completed.length > 0 ? 
+        completed.reduce((acc, curr) => acc + (curr.score ? curr.score.total : 0), 0) / completed.length : 0;
+
+    DOM.totalStudents.textContent = total;
+    DOM.completedCount.textContent = completed.length;
+    DOM.avgScore.textContent = avg.toFixed(1);
+}
+
+async function viewStudentReview(email) {
+    DOM.loading.style.display = 'flex';
+    try {
+        const doc = await db.collection('evaluaciones_abdomen').doc(email).get();
+        if (doc.exists) {
+            const data = doc.data();
+            renderReviewMode(data);
+        }
+    } catch (e) {
+        console.error("Error loading review:", e);
+    }
+    DOM.loading.style.display = 'none';
+}
+
+function renderReviewMode(data) {
+    DOM.teacherSection.style.display = 'none';
+    DOM.reviewSection.style.display = 'flex';
+    DOM.reviewStudentEmail.textContent = `Revisión: ${data.email}`;
+    DOM.reviewContent.innerHTML = '';
+
+    data.questions.forEach((q, i) => {
+        const studentAns = data.answers[i];
+        let isCorrect = false;
+        let correctAnswerText = "";
+        let studentAnswerText = "";
+
+        if (q.type === 'mc') {
+            const correctIdx = q.part === 1 ? q.correct : q.correctIndex;
+            isCorrect = studentAns === correctIdx;
+            correctAnswerText = q.options[correctIdx];
+            studentAnswerText = q.options[studentAns] || "Sin respuesta";
+        } else {
+            isCorrect = isAnswerCorrect(studentAns, q.answer);
+            correctAnswerText = q.answer;
+            studentAnswerText = studentAns || "Sin respuesta";
+        }
+
+        const item = document.createElement('div');
+        item.className = 'review-item';
+        
+        const imgHtml = q.src ? `<img src="IMAGENES_ABDOMEN/${q.src}" class="review-img-small">` : '';
+
+        item.innerHTML = `
+            <div class="review-header">
+                <span class="part-indicator" style="margin-bottom:0">Parte ${q.part}</span>
+                <span class="${isCorrect ? 'ans-correct' : 'ans-incorrect'}">
+                    ${isCorrect ? '✓ Correcto' : '✗ Incorrecto'}
+                </span>
+            </div>
+            <div class="review-body">
+                ${imgHtml}
+                <div class="review-details">
+                    <p style="font-weight: 600; margin-bottom: 0.5rem;">${q.question || 'Identifica la estructura'}</p>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">Respuesta del alumno: <span class="${isCorrect ? 'ans-correct' : 'ans-incorrect'}">${studentAnswerText}</span></p>
+                    <p style="font-size: 0.9rem; color: var(--text-secondary);">Respuesta correcta: <span class="ans-correct">${correctAnswerText}</span></p>
+                </div>
+            </div>
+        `;
+        DOM.reviewContent.appendChild(item);
+    });
+}
+
+DOM.backToDashBtn.onclick = () => {
+    DOM.reviewSection.style.display = 'none';
+    DOM.teacherSection.style.display = 'flex';
+};
+
+function exportToCSV(evaluations) {
+    let csv = "Email,Estado,Nota P1,Nota P2,Nota P3,Nota P4,Nota Total,Fecha\n";
+    
+    evaluations.forEach(e => {
+        const score = e.score || { part1: 0, part2: 0, part3: 0, part4: 0, total: 0 };
+        const date = e.lastUpdated ? new Date(e.lastUpdated.seconds * 1000).toISOString() : '---';
+        csv += `${e.email},${e.status},${score.part1},${score.part2},${score.part3},${score.part4},${score.total.toFixed(2)},${date}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `resultados_abdomen_${new Date().toLocaleDateString()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Global for table action
+window.viewStudentReview = viewStudentReview;

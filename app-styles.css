@@ -455,3 +455,95 @@ header {
     .stats-grid { grid-template-columns: 1fr; }
     .question-text { font-size: 1.25rem; }
 }
+
+/* --- Teacher Dashboard & Review Styles --- */
+.table-container {
+    margin-top: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--glass-border);
+}
+
+#teacher-table th {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 700;
+}
+
+#teacher-table td {
+    padding: 1rem;
+    font-size: 0.9rem;
+}
+
+#teacher-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: var(--transition);
+}
+
+#teacher-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.badge-success { background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); }
+.badge-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); border: 1px solid rgba(245, 158, 11, 0.2); }
+
+.review-item {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    border: 1px solid var(--glass-border);
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 0.75rem;
+}
+
+.review-body {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.review-img-small {
+    width: 150px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--glass-border);
+    background: #000;
+}
+
+.review-details {
+    flex: 1;
+}
+
+.ans-correct { color: var(--success); font-weight: 600; }
+.ans-incorrect { color: var(--error); font-weight: 600; }
+
+.score-tag {
+    background: var(--primary);
+    color: white;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+@media (max-width: 768px) {
+    .review-body { flex-direction: column; }
+    .review-img-small { width: 100%; height: auto; }
+}
