@@ -6,10 +6,11 @@
 // --- State Management ---
 let currentState = {
     user: null,
-    currentPart: 1, // 1, 2, or 3
+    sessionId: null, // Email based ID
+    status: 'new', // new, in_progress, completed
     currentQuestionIndex: 0,
-    questions: [], // Selected questions for the session
-    answers: [], // User's answers
+    questions: [], 
+    answers: [], 
     score: {
         part1: 0,
         part2: 0,
@@ -71,14 +72,53 @@ DOM.loginBtn.addEventListener('click', () => {
     }
 });
 
-function handleAuthSuccess(email) {
+async function handleAuthSuccess(email) {
     currentState.user = { email };
+    currentState.sessionId = email;
     DOM.displayEmail.textContent = email;
-    DOM.authSection.style.display = 'none';
-    DOM.header.style.display = 'flex';
-    DOM.introSection.style.display = 'flex';
     
-    prepareQuestions();
+    DOM.loading.style.display = 'flex';
+    DOM.loading.querySelector('p').textContent = 'Verificando estado de la evaluación...';
+
+    try {
+        const doc = await db.collection('evaluaciones_abdomen').doc(email).get();
+        
+        if (doc.exists) {
+            const data = doc.data();
+            currentState.status = data.status;
+            currentState.questions = data.questions || [];
+            currentState.answers = data.answers || [];
+            currentState.currentQuestionIndex = data.currentQuestionIndex || 0;
+            currentState.score = data.score || currentState.score;
+
+            if (data.status === 'completed') {
+                showResults();
+                DOM.authSection.style.display = 'none';
+                DOM.header.style.display = 'flex';
+            } else {
+                // Resume in_progress
+                DOM.authSection.style.display = 'none';
+                DOM.header.style.display = 'flex';
+                DOM.quizSection.style.display = 'flex';
+                renderQuestion();
+            }
+        } else {
+            // New user
+            DOM.authSection.style.display = 'none';
+            DOM.header.style.display = 'flex';
+            DOM.introSection.style.display = 'flex';
+            prepareQuestions();
+        }
+    } catch (e) {
+        console.error("Error checking session:", e);
+        // Fallback for offline/errors
+        DOM.authSection.style.display = 'none';
+        DOM.header.style.display = 'flex';
+        DOM.introSection.style.display = 'flex';
+        prepareQuestions();
+    }
+    
+    DOM.loading.style.display = 'none';
 }
 
 // --- Question Preparation ---
@@ -119,6 +159,24 @@ function prepareQuestions() {
     currentState.questions = [...p1, ...p2, ...p3, ...p4];
 }
 
+async function syncSessionWithFirebase() {
+    if (!currentState.user) return;
+    
+    try {
+        await db.collection('evaluaciones_abdomen').doc(currentState.sessionId).set({
+            email: currentState.user.email,
+            status: currentState.status,
+            questions: currentState.questions,
+            answers: currentState.answers,
+            currentQuestionIndex: currentState.currentQuestionIndex,
+            score: currentState.score,
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+    } catch (e) {
+        console.error("Error syncing session:", e);
+    }
+}
+
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -138,8 +196,15 @@ function generateDistractors(correctAnswer, allAnswers) {
 }
 
 // --- Quiz Flow ---
-DOM.startBtn.addEventListener('click', () => {
+DOM.startBtn.addEventListener('click', async () => {
+    currentState.status = 'in_progress';
     DOM.introSection.style.display = 'none';
+    DOM.loading.style.display = 'flex';
+    DOM.loading.querySelector('p').textContent = 'Inicializando sesión segura...';
+    
+    await syncSessionWithFirebase();
+    
+    DOM.loading.style.display = 'none';
     DOM.quizSection.style.display = 'flex';
     renderQuestion();
 });
@@ -209,9 +274,11 @@ DOM.openAnswerInput.addEventListener('input', () => {
     DOM.nextBtn.style.opacity = val.length === 0 ? '0.5' : '1';
 });
 
-DOM.nextBtn.addEventListener('click', () => {
+DOM.nextBtn.addEventListener('click', async () => {
     if (currentState.currentQuestionIndex < currentState.questions.length - 1) {
         currentState.currentQuestionIndex++;
+        // Save progress before rendering next
+        syncSessionWithFirebase(); 
         renderQuestion();
     } else {
         finishAssessment();
@@ -251,7 +318,8 @@ function finishAssessment() {
         total: ((p1Correct + p2Correct + p3Correct + p4Correct) / currentState.questions.length) * 5.0
     };
 
-    saveToFirebase().then(() => {
+    currentState.status = 'completed';
+    syncSessionWithFirebase().then(() => {
         showResults();
         DOM.loading.style.display = 'none';
     });
@@ -266,19 +334,7 @@ function isAnswerCorrect(user, correct) {
     return u === c || c.includes(u) && u.length > 3;
 }
 
-async function saveToFirebase() {
-    try {
-        await db.collection('resultados_abdomen').add({
-            email: currentState.user.email,
-            score: currentState.score,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            answers: currentState.answers
-        });
-    } catch (e) {
-        console.error("Error saving to Firebase: ", e);
-        // Fallback for local testing if FB not configured
-    }
-}
+// saveToFirebase was replaced by syncSessionWithFirebase for real-time persistence
 
 function showResults() {
     DOM.resultsSection.style.display = 'flex';
