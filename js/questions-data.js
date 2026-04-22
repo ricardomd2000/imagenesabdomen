@@ -24,7 +24,7 @@ const questionsData = {
             explanation: "Es el receso hepatorrenal, punto más declive en decúbito supino."
         },
         {
-            question: "El límite superior del foramen epiploico (de Winslow) es:",
+            question: "El límite superior del foramen epiploico es:",
             options: ["Vena cava inferior", "Lóbulo caudado", "Primera porción del duodeno", "Ligamento hepatoduodenal"],
             correct: 1,
             explanation: "El lóbulo caudado (proceso caudado) forma el techo de este orificio."
@@ -60,7 +60,7 @@ const questionsData = {
             explanation: "Discurre por la fisura umbilical y separa los segmentos II/III del IV."
         },
         {
-            question: "El segmento IV (lóbulo cuadrado) se localiza entre:",
+            question: "El segmento IV se localiza entre:",
             options: ["Fisura umbilical y fosa vesicular", "VCI y ligamento venoso", "Fisura portal derecha y borde hepático", "Cúpula diafragmática y VCI"],
             correct: 0,
             explanation: "Sus límites son el ligamento redondo a la izquierda y la vesícula a la derecha."
@@ -108,7 +108,7 @@ const questionsData = {
             explanation: "Es el punto de Murphy anatómico."
         },
         {
-            question: "La ampolla de Vater (hepatopancreática) desemboca en:",
+            question: "La ampolla de Vater desemboca en:",
             options: ["Primera porción del duodeno", "Papila duodenal menor", "Papila duodenal mayor", "Ángulo de Treitz"],
             correct: 2,
             explanation: "Situada en la cara posteromedial de la 2.ª porción duodenal."
@@ -169,7 +169,7 @@ const questionsData = {
         },
         {
             question: "¿Qué células almacenan vitamina A en el hígado?",
-            options: ["Células de Kupffer", "Hepatocitos", "Células estrelladas (Ito)", "Colangiocitos"],
+            options: ["Células de Kupffer", "Hepatocitos", "Células estrelladas", "Colangiocitos"],
             correct: 2,
             explanation: "Se encuentran en el espacio de Disse."
         },
@@ -205,7 +205,7 @@ const questionsData = {
         },
         {
             question: "El conducto cístico contiene pliegues mucosos llamados:",
-            options: ["Válvulas de Kerckring", "Válvulas espirales (de Heister)", "Válvulas de Houston", "Esfínter de Lutkens"],
+            options: ["Válvulas de Kerckring", "Válvulas espirales", "Válvulas de Houston", "Esfínter de Lutkens"],
             correct: 1,
             explanation: "Ayudan a mantener la permeabilidad del conducto."
         },
