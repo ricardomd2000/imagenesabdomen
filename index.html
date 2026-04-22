@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Imágenes Diagnósticas: Abdomen | Universidad de La Sabana</title>
     <meta name="description" content="Plataforma de evaluación de imágenes diagnósticas de abdomen para estudiantes de medicina.">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="app-styles.css">
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -53,12 +53,16 @@
                 <span class="part-indicator">Instrucciones</span>
                 <h2 style="margin-bottom: 1.5rem; font-size: 2rem;">Evaluación de Abdomen</h2>
                 <div style="text-align: left; margin-bottom: 2rem; color: var(--text-secondary);">
-                    <p style="margin-bottom: 1rem;">La evaluación consta de tres partes diseñadas para medir su competencia en anatomía y diagnóstico por imagen:</p>
+                    <p style="margin-bottom: 1rem;">La evaluación consta de cuatro partes diseñadas para medir su competencia en anatomía y diagnóstico por imagen:</p>
                     <ul style="list-style: none; display: flex; flex-direction: column; gap: 0.75rem;">
                         <li><strong style="color: var(--text-primary);">Parte 1:</strong> 6 preguntas teóricas de opción múltiple.</li>
                         <li><strong style="color: var(--text-primary);">Parte 2:</strong> 3 estructuras de Anatomage para identificación abierta.</li>
-                        <li><strong style="color: var(--text-primary);">Parte 3:</strong> 10 imágenes diagnósticas con selección múltiple.</li>
+                        <li><strong style="color: var(--text-primary);">Parte 3:</strong> 10 imágenes normales/anatomage (selección múltiple).</li>
+                        <li><strong style="color: var(--text-primary);">Parte 4:</strong> 5 imágenes patológicas (identificación del órgano afectado).</li>
                     </ul>
+                    <p style="margin-top: 1rem; font-size: 0.875rem; border-top: 1px solid var(--border); pt: 1rem;">
+                        * Las respuestas abiertas se califican mediante un sistema de coincidencia flexible que ignora tildes y mayúsculas.
+                    </p>
                 </div>
                 <button id="start-btn" class="btn-primary">Comenzar Ahora</button>
             </div>
@@ -84,12 +88,13 @@
                     </div>
 
                     <div id="open-answer-area" style="display: none;">
-                        <input type="text" id="open-answer-input" class="open-answer-input" placeholder="Escribe el nombre de la estructura...">
+                        <input type="text" id="open-answer-input" class="open-answer-input" placeholder="Escribe el nombre de la estructura u órgano...">
+                        <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">Calificación automática: Se permiten variaciones menores.</p>
                     </div>
                 </div>
 
                 <div class="nav-actions">
-                    <span id="question-counter" style="color: var(--text-secondary); font-size: 0.875rem; align-self: center;">Pregunta 1 de 19</span>
+                    <span id="question-counter" style="color: var(--text-secondary); font-size: 0.875rem; align-self: center;">Pregunta 1 de 24</span>
                     <button id="next-btn" class="btn-primary" style="width: auto; padding: 0.875rem 3rem;">Siguiente</button>
                 </div>
             </div>
@@ -111,7 +116,7 @@
 
                 <p id="feedback-message" class="feedback-text">Buen esfuerzo. Sigue practicando tu identificación anatómica.</p>
 
-                <div class="stats-grid">
+                <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
                     <div class="stat-item">
                         <span class="stat-value" id="stat-theory">0/6</span>
                         <span class="stat-label">Teoría</span>
@@ -122,7 +127,11 @@
                     </div>
                     <div class="stat-item">
                         <span class="stat-value" id="stat-diag">0/10</span>
-                        <span class="stat-label">Diagnóstico</span>
+                        <span class="stat-label">Normal/Anat</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-path">0/5</span>
+                        <span class="stat-label">Patología</span>
                     </div>
                 </div>
 
@@ -132,10 +141,10 @@
     </main>
 
     <!-- App Data -->
-    <script src="js/emails.js?v=1.0.3"></script>
-    <script src="js/questions-data.js?v=1.0.3"></script>
+    <script src="js/access-config.js"></script>
+    <script src="js/questions-data.js"></script>
     <!-- Core Logic -->
-    <script src="js/firebase-config.js?v=1.0.3"></script>
-    <script src="script.js?v=1.0.3"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="app-core.js"></script>
 </body>
 </html>

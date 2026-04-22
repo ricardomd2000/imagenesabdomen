@@ -14,6 +14,7 @@ let currentState = {
         part1: 0,
         part2: 0,
         part3: 0,
+        part4: 0,
         total: 0
     }
 };
@@ -46,7 +47,8 @@ const DOM = {
     feedbackMessage: document.getElementById('feedback-message'),
     statTheory: document.getElementById('stat-theory'),
     statAnatomy: document.getElementById('stat-anatomy'),
-    statDiag: document.getElementById('stat-diag')
+    statDiag: document.getElementById('stat-diag'),
+    statPath: document.getElementById('stat-path')
 };
 
 // --- Initialization ---
@@ -87,20 +89,34 @@ function prepareQuestions() {
     // Part 2: 3 random anatomage images
     const p2 = shuffleArray([...questionsData.part2]).slice(0, 3).map(q => ({...q, part: 2, type: 'open'}));
     
-    // Part 3: 10 random diagnostic images
-    const p3 = shuffleArray([...questionsData.part3]).slice(0, 10).map(q => {
-        const options = generateDistractors(q.answer, questionsData.part3.map(item => item.answer));
+    // Part 3: 10 random diagnostic images (Normal or Anatomage)
+    const p3Pool = [
+        ...questionsData.part2, 
+        ...questionsData.part3.filter(item => item.src.includes('IMNORMAL'))
+    ];
+    const p3 = shuffleArray([...p3Pool]).slice(0, 10).map(q => {
+        const options = generateDistractors(q.answer, p3Pool.map(item => item.answer));
         return {
             ...q,
             part: 3,
             type: 'mc',
-            question: "¿Qué estructura o hallazgo se observa en la imagen?",
+            question: "¿Qué estructura se observa en la imagen?",
             options: options.shuffled,
             correctIndex: options.correctIndex
         };
     });
 
-    currentState.questions = [...p1, ...p2, ...p3];
+    // Part 4: 5 random pathological images (Identify affected organ)
+    const p4Pool = questionsData.part3.filter(item => item.src.includes('IMPATOLOGICA'));
+    const p4 = shuffleArray([...p4Pool]).slice(0, 5).map(q => ({
+        ...q,
+        part: 4,
+        type: 'open',
+        question: "¿Cuál es el principal órgano o estructura afectado en esta imagen?",
+        answer: q.organ // Check against the organ field
+    }));
+
+    currentState.questions = [...p1, ...p2, ...p3, ...p4];
 }
 
 function shuffleArray(array) {
@@ -138,7 +154,7 @@ function renderQuestion() {
     DOM.questionCounter.textContent = `Pregunta ${currentState.currentQuestionIndex + 1} de ${totalQ}`;
     
     // Update Part Header
-    const partNames = ["", "Parte 1: Teoría", "Parte 2: Anatomage", "Parte 3: Diagnóstico"];
+    const partNames = ["", "Parte 1: Teoría", "Parte 2: Anatomage", "Parte 3: Normal/Anat", "Parte 4: Patología"];
     DOM.partName.textContent = partNames[q.part];
     
     // Clear previous
@@ -212,16 +228,18 @@ function finishAssessment() {
     let p1Correct = 0;
     let p2Correct = 0;
     let p3Correct = 0;
+    let p4Correct = 0;
 
     currentState.questions.forEach((q, i) => {
         const userAns = currentState.answers[i];
         if (q.part === 1) {
             if (userAns === q.correct) p1Correct++;
         } else if (q.part === 2) {
-            // Fuzzy match for open answers
             if (isAnswerCorrect(userAns, q.answer)) p2Correct++;
         } else if (q.part === 3) {
             if (userAns === q.correctIndex) p3Correct++;
+        } else if (q.part === 4) {
+            if (isAnswerCorrect(userAns, q.answer)) p4Correct++;
         }
     });
 
@@ -229,7 +247,8 @@ function finishAssessment() {
         part1: p1Correct,
         part2: p2Correct,
         part3: p3Correct,
-        total: ((p1Correct + p2Correct + p3Correct) / currentState.questions.length) * 5.0
+        part4: p4Correct,
+        total: ((p1Correct + p2Correct + p3Correct + p4Correct) / currentState.questions.length) * 5.0
     };
 
     saveToFirebase().then(() => {
@@ -281,4 +300,5 @@ function showResults() {
     DOM.statTheory.textContent = `${currentState.score.part1}/6`;
     DOM.statAnatomy.textContent = `${currentState.score.part2}/3`;
     DOM.statDiag.textContent = `${currentState.score.part3}/10`;
+    DOM.statPath.textContent = `${currentState.score.part4}/5`;
 }
